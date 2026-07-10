@@ -1,6 +1,6 @@
 # Django webserver | Resonate example application
 
-This application has been tested with Resonate Python SDK v.0.4.12.
+This application has been tested with Resonate Python SDK v0.7.1.
 
 Install dependencies:
 

@@ -1,33 +1,46 @@
-from flask import Flask, jsonify
-from resonate import Resonate
+from __future__ import annotations
 
+import asyncio
+
+from flask import Flask, jsonify
+from resonate.context import Context
+from resonate.resonate import Resonate
 
 app = Flask("flask-webserver")
-resonate = Resonate.local()
 
 
-def baz(_):
+async def baz(_: Context) -> str:
     print("running baz")
     return "hello world!"
 
 
-def bar(ctx):
+async def bar(ctx: Context) -> str:
     print("running bar")
-    result = yield ctx.lfc(baz)
+    result = await ctx.run(baz)
     return result
 
 
-@resonate.register
-def foo(ctx):
+async def foo(ctx: Context) -> str:
     print("running foo")
-    result = yield ctx.lfc(bar)
+    result = await ctx.run(bar)
+    return result
+
+
+async def _run() -> str:
+    r = Resonate()
+    r.register(foo)
+    r.register(bar)
+    r.register(baz)
+    handle = r.run("flask_webserver_foo_promise_id", foo)
+    result = await handle.result()
+    await r.stop()
     return result
 
 
 @app.route("/")
 def read_root():
-    handle = foo.run("flask_webserver_foo_promise_id")
-    return jsonify({"value": handle.result()})
+    value = asyncio.run(_run())
+    return jsonify({"value": value})
 
 
 def main() -> None:

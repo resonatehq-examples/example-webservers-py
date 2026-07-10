@@ -1,6 +1,6 @@
 # Flask webserver | Resonate example application
 
-This example application has been tested with Resonate Python SDK v0.4.12
+This example application has been tested with Resonate Python SDK v0.7.1
 
 Install dependencies:
 
