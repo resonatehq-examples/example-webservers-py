@@ -1,25 +1,37 @@
-from resonate import Resonate, Context
-from resonate.stores import LocalStore
+from __future__ import annotations
+
+import asyncio
+
 from django.http import JsonResponse
+from resonate.resonate import Resonate
+from resonate.context import Context
 
 
-resonate = Resonate(store=LocalStore())
-
-
-def baz(_: Context):
+async def baz(_: Context) -> int:
     return 1
 
 
-def bar(ctx: Context):
-    v = yield ctx.lfc(baz)
+async def bar(ctx: Context) -> int:
+    v = await ctx.run(baz)
     return v + 1
 
-@resonate.register
-def foo(ctx: Context):
-    v = yield ctx.lfc(bar)
+
+async def foo(ctx: Context) -> int:
+    v = await ctx.run(bar)
     return v + 1
+
+
+async def _run() -> int:
+    r = Resonate()
+    r.register(foo)
+    r.register(bar)
+    r.register(baz)
+    handle = r.run("django_webserver_foo_promise_id", foo)
+    result = await handle.result()
+    await r.stop()
+    return result
 
 
 def read_root(request):
-    v = foo.run("django_webserver_foo_promise_id").result()
+    v = asyncio.run(_run())
     return JsonResponse({"value": v})
